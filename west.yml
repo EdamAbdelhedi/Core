@@ -72,7 +72,7 @@ manifest:
       path: modules/lib/zcbor
     - name: thingset-zephyr-sdk
       remote: thingset
-      revision: e57447bbeb7c165e14a273242e8495343c1c6f54
+      revision: 9cf294d8f1c66ee0575b3928b8761b036ab5167e
       path: thingset-zephyr-sdk
       import:
         name-allowlist:
@@ -80,7 +80,7 @@ manifest:
           - zcbor
     - name: thingset-node-c
       remote: thingset
-      revision: 68c7544830df2ba23f67e31bad91e124377827a3
+      revision: 3883e8fd429a7b8a2916c730c42aa1aabe48dfb3
       path: modules/thingset-node-c
       import: true
 
