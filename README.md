@@ -1,61 +1,67 @@
-# OwnTech Power API
+# MUX Firmware Project
 
-This is the OwnTech Power API Core repository.
+This folder is the `MUX` firmware project for a second SPIN card used to route CUT signals to the oscilloscope through external multiplexers.
 
-The Power API is designed to be used with VS Code and PlatformIO.
-[Installing VS Code with PlatformIO](https://platformio.org/install/ide?install=vscode).
+Use VS Code with PlatformIO to build and upload this project.
 
-For information about Power API, check out its [Documentation](https://docs.owntech.org/#/renders/API/home).
+## Main files
 
+- `src/main.cpp`: GPIO-based multiplexer routing firmware for the MUX card
+- `src/spin_data_objects.h`: ThingSet data objects exposed by the firmware
+- `platformio.ini`: board, shield, libraries, and upload configuration
 
-## Downloading OwnTech Power API Core
+## Current ThingSet control
 
-You fisrt need to download the Power API Core repository using the following command:
+`MUX` exposes the routing tree used by the PWM tests:
 
-`git clone https://github.com/owntech-foundation/Core.git owntech_power_api`
+- `Mux/Mux1/Ch1` to `Mux/Mux1/Ch4`
+- `Mux/Mux2/Ch1` to `Mux/Mux2/Ch4`
+- `Mux/Mux3/Ch1` to `Mux/Mux3/Ch4`
 
-Then, open VS Code and, if not already done, install the PlatformIO plugin.
+Each route exposes:
 
-Finally, open the newly cloned folder `owntech_power_api` using menu `File > Open Folder...`
+- `wChannel`
+- `wEnable`
+- `xApply`
+- `rChannel`
+- `rEnable`
 
+`MUX` does not automatically know which signal `CUT` selected. It is configured either:
 
-## Working with OwnTech Power API
+- manually from a terminal such as Tera Term, or
+- from the PC-side helper `tests/set_cut_mux_pwm.py`
 
-While the project contains many folders and files, all your code goes to the `src` folder.
-In the this folder, the file `main.cpp` is the entry point of the application.
-Aditionally, some configuration can be done in the `platformio.ini` file.
+Important hardware behavior:
 
-Other folders and files are used to configure the underlying Zephyr OS and PlatformIO, and are hidden by default.
+- `MUX1`, `MUX2`, and `MUX3` share the same `S0..S3` address lines
+- only one of the three muxes should be enabled at a time
+- the firmware enforces this by disabling all muxes first, then enabling only the selected one
 
+## Current synchronized mapping with CUT
 
-### Accessing OwnTech source code in VS Code (for advanced developers)
+For the present setup, the practical synchronized routes are:
 
-The full hierarchy of the project is as follows:
+- `Mux1/channel 8` -> `CUT PA8`
+- `Mux1/channel 9` -> `CUT PA9`
+- `Mux1/channel 10` -> `CUT PA10`
+- `Mux2/channel 12` -> `CUT PB12`
+- `Mux2/channel 13` -> `CUT PB13`
+- `Mux2/channel 14` -> `CUT PB14`
+- `Mux2/channel 15` -> `CUT PB15`
+- `Mux3/channel 6` -> `CUT PC6`
+- `Mux3/channel 7` -> `CUT PC7`
+- `Mux3/channel 8` -> `CUT PC8`
+- `Mux3/channel 9` -> `CUT PC9`
 
-```
-owntech_power_api
-└─ owntech
-|  └─ boards
-|  └─ scripts
-|  └─>pio_extra.ini
-└─ src
-|  └─>main.cpp
-└─ zephyr
-|  └─ boards
-|  └─ dts
-|  └─ modules
-|  └─>CMakeLists.txt
-|  └─>prj.conf
-└─>LICENSE
-└─>platformio.ini
-└─>README.md
-```
+## What to edit first
 
-The `owntech` folder contains scripts and board description for PlatformIO, while the `zephyr` folder contains board decription and OwnTech's Zephyr modules.
-By default, these folders (as well as VS Code and PlatformIO folders `.vscode` and `.pio`) are hidden when opening the project in VS Code.
+To program the SPIN MUX card, start by editing `src/main.cpp`.
 
-If you need to access these in VS Code, open the project using your file explorer, then in the `.vscode` folder, rename file `settings.json`, e.g. to `settings.json.old`.
+Current control-pin setup:
 
-Advanced Zephyr configuration can be tweaked by editing `zephyr/prj.conf`.
+- shared address lines: `S0 -> PA0`, `S1 -> PA1`, `S2 -> PA2`, `S3 -> PA3`
+- enable pins: `MUX1 -> PC0`, `MUX2 -> PC1`, `MUX3 -> PC2`
 
-The OwnTech API source code is located in `zephyr/modules`. If you need to tailor it to your needs, please checkout the [Zephyr documentation](https://docs.zephyrproject.org/3.4.0/).
+Update those pin numbers if your hardware changes.
+
+If you need to change project configuration, update `platformio.ini` and the files in `src/` such as `app.ini`, `app.conf`, and `app.overlay`.

@@ -1,116 +1,159 @@
-/*
- * Copyright (c) 2021-present LAAS-CNRS
- *
- *   This program is free software: you can redistribute it and/or modify
- *   it under the terms of the GNU Lesser General Public License as published by
- *   the Free Software Foundation, either version 2.1 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU Lesser General Public License for more details.
- *
- *   You should have received a copy of the GNU Lesser General Public License
- *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
- *
- * SPDX-License-Identifier: LGPL-2.1
- */
-
-/**
- * @brief  This example shows how to blink the onboard LED of the Spin board.
- *
- * @author Clément Foucher <clement.foucher@laas.fr>
- * @author Luiz Villa <luiz.villa@laas.fr>
- * @author Ayoub Farah Hassan <ayoub.farah-hassan@laas.fr>
- */
-
-/* --------------OWNTECH APIs---------------------------------- */
 #include "SpinAPI.h"
-#include "TaskAPI.h"
+#include "mux_control.h"
+#include "spin_data_objects.h"
 
-/* --------------SETUP FUNCTIONS DECLARATION------------------- */
-
-/* Setups the hardware and software of the system */
-void setup_routine();
-
-/* --------------LOOP FUNCTIONS DECLARATION-------------------- */
-
-/* Code to be executed in the background task */
-void loop_background_task();
-/* Code to be executed in real time in the critical task */
-void loop_critical_task();
-
-/* --------------USER VARIABLES DECLARATIONS------------------- */
-
-
-
-/* --------------SETUP FUNCTIONS------------------------------- */
-
-/**
- * This is the setup routine.
- * It is used to call functions that will initialize your spin, power shields
- * and tasks.
- *
- * In this example, we spawn a background task.
- * An optional critical task can be initialized by uncommenting the two
- * commented lines.
- */
-void setup_routine()
+namespace
 {
-    /* Declare task */
-    uint32_t background_task_number =
-                            task.createBackground(loop_background_task);
+    constexpr uint8_t DEFAULT_MUX_CHANNEL = 0;
 
-    /* Uncomment following line if you use the critical task */
-    /* task.createCritical(loop_critical_task, 500); */
+    struct MuxChannelPins
+    {
+        uint8_t s0;
+        uint8_t s1;
+        uint8_t s2;
+        uint8_t s3;
+        uint8_t mux1_enable;
+        uint8_t mux2_enable;
+        uint8_t mux3_enable;
+    };
 
-    /* Finally, start tasks */
-    task.startBackground(background_task_number);
-    /* Uncomment following line if you use the critical task */
-    /* task.startCritical(); */
+    constexpr MuxChannelPins MUX_CH1_PINS = {PA0, PA1, PA2, PA3, PC0, PC1, PC2};
+    constexpr MuxChannelPins MUX_CH2_PINS = {PA4, PA5, PA6, PA7, PC3, PC4, PC5};
+    constexpr MuxChannelPins MUX_CH3_PINS = {PB0, PB1, PB2, PB3, PC6, PC7, PC8};
+    constexpr MuxChannelPins MUX_CH4_PINS = {PB4, PB5, PB6, PB7, PC9, PC10, PC11};
+
+    constexpr MuxChannelPins get_channel_pins(uint8_t channel_index)
+    {
+        switch (channel_index) {
+        case 0:
+            return MUX_CH1_PINS;
+        case 1:
+            return MUX_CH2_PINS;
+        case 2:
+            return MUX_CH3_PINS;
+        default:
+            return MUX_CH4_PINS;
+        }
+    }
+
+    constexpr uint8_t get_enable_pin(const MuxChannelPins &pins, uint8_t mux_index)
+    {
+        switch (mux_index) {
+        case 0:
+            return pins.mux1_enable;
+        case 1:
+            return pins.mux2_enable;
+        default:
+            return pins.mux3_enable;
+        }
+    };
+
+    void write_mux_bit(uint8_t pin, bool state)
+    {
+        if (state) {
+            spin.gpio.setPin(pin);
+        }
+        else {
+            spin.gpio.resetPin(pin);
+        }
+    }
+
+    void configure_channel_pins(uint8_t channel_index)
+    {
+        const MuxChannelPins pins = get_channel_pins(channel_index);
+
+        spin.gpio.configurePin(pins.s0, OUTPUT);
+        spin.gpio.configurePin(pins.s1, OUTPUT);
+        spin.gpio.configurePin(pins.s2, OUTPUT);
+        spin.gpio.configurePin(pins.s3, OUTPUT);
+        spin.gpio.configurePin(pins.mux1_enable, OUTPUT);
+        spin.gpio.configurePin(pins.mux2_enable, OUTPUT);
+        spin.gpio.configurePin(pins.mux3_enable, OUTPUT);
+    }
+
+    void disable_all_mux_outputs(uint8_t channel_index)
+    {
+        const MuxChannelPins pins = get_channel_pins(channel_index);
+
+        for (uint8_t mux_index = 0; mux_index < MUX_COUNT; ++mux_index) {
+            write_mux_bit(get_enable_pin(pins, mux_index), true);
+        }
+    }
+
+    void route_shared_signal(uint8_t channel_index, uint8_t selected_channel)
+    {
+        const uint8_t channel = selected_channel & 0x0F;
+        const MuxChannelPins pins = get_channel_pins(channel_index);
+
+        write_mux_bit(pins.s0, (channel & 0x01u) != 0u);
+        write_mux_bit(pins.s1, (channel & 0x02u) != 0u);
+        write_mux_bit(pins.s2, (channel & 0x04u) != 0u);
+        write_mux_bit(pins.s3, (channel & 0x08u) != 0u);
+    }
+
+    void set_mux_enable(uint8_t channel_index, uint8_t mux_index, bool enabled)
+    {
+        const MuxChannelPins pins = get_channel_pins(channel_index);
+        write_mux_bit(get_enable_pin(pins, mux_index), !enabled);
+    }
+
+    void setup_routine()
+    {
+        for (uint8_t channel_index = 0; channel_index < MUX_CHANNEL_COUNT; ++channel_index) {
+            configure_channel_pins(channel_index);
+            disable_all_mux_outputs(channel_index);
+        }
+
+        for (uint8_t mux_index = 0; mux_index < MUX_COUNT; ++mux_index) {
+            for (uint8_t channel_index = 0; channel_index < MUX_CHANNEL_COUNT; ++channel_index) {
+                mux_apply(mux_index, channel_index);
+            }
+        }
+    }
 }
 
-/* --------------LOOP FUNCTIONS-------------------------------- */
+MuxRouteState mux_routes[MUX_COUNT][MUX_CHANNEL_COUNT] = {
+    {
+        {DEFAULT_MUX_CHANNEL, false},
+        {DEFAULT_MUX_CHANNEL, false},
+        {DEFAULT_MUX_CHANNEL, false},
+        {DEFAULT_MUX_CHANNEL, false},
+    },
+    {
+        {DEFAULT_MUX_CHANNEL, false},
+        {DEFAULT_MUX_CHANNEL, false},
+        {DEFAULT_MUX_CHANNEL, false},
+        {DEFAULT_MUX_CHANNEL, false},
+    },
+    {
+        {DEFAULT_MUX_CHANNEL, false},
+        {DEFAULT_MUX_CHANNEL, false},
+        {DEFAULT_MUX_CHANNEL, false},
+        {DEFAULT_MUX_CHANNEL, false},
+    },
+};
 
-/**
- * This is the code loop of the background task
- * It runs perpetually. Here a `suspendBackgroundMs` is used to pause during
- * 1000ms between each LED toggles.
- * Hence we expect the LED to blink each second.
- */
-void loop_background_task()
+void mux_apply(uint8_t mux_index, uint8_t channel_index)
 {
-    /* Task content */
-    spin.led.toggle();
+    if (mux_index >= MUX_COUNT || channel_index >= MUX_CHANNEL_COUNT) {
+        return;
+    }
 
-    /* Pause between two runs of the task */
-    task.suspendBackgroundMs(1000);
+    MuxRouteState &route = mux_routes[mux_index][channel_index];
+    route.selected_channel &= 0x0F;
+
+    if (route.enabled) {
+        disable_all_mux_outputs(channel_index);
+        route_shared_signal(channel_index, route.selected_channel);
+        set_mux_enable(channel_index, mux_index, true);
+    }
+    else {
+        set_mux_enable(channel_index, mux_index, false);
+    }
 }
 
-/**
- * Uncomment lines in setup_routine() to use critical task.
- *
- * This is the code loop of the critical task
- * It is executed every 500 micro-seconds defined in the setup_software
- * function. You can use it to execute an ultra-fast code with
- * the highest priority which cannot be interrupted by the background tasks.
- *
- * In the critical task, you can implement your control algorithm that will
- * run in Real Time and control your power flow.
- */
-void loop_critical_task()
-{
-
-}
-
-/**
- * This is the main function of this example
- * This function is generic and does not need editing.
- */
 int main(void)
 {
     setup_routine();
-
     return 0;
 }
