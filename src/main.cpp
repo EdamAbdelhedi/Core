@@ -2,6 +2,7 @@
 #include "TaskAPI.h"
 #include "cut_pwm_control.h"
 #include "spin_data_objects.h"
+#include "hrtim.h"
 
 namespace
 {
@@ -38,6 +39,12 @@ uint8_t cut_pwm_e_modulation = 0;
 uint8_t cut_pwm_f_modulation = 0;
 bool cut_multi_enabled = false;
 uint8_t cut_multi_apply_status = 0;
+uint16_t cut_pwm_a_period = 0;
+uint16_t cut_pwm_b_period = 0;
+uint16_t cut_pwm_c_period = 0;
+uint16_t cut_pwm_d_period = 0;
+uint16_t cut_pwm_e_period = 0;
+uint16_t cut_pwm_f_period = 0;
 
 bool cut_pwm_a1_enabled = false;
 bool cut_pwm_a2_enabled = false;
@@ -92,6 +99,18 @@ namespace
         cut_multi_apply_status = 1;
         return UpDwn;
     }
+
+    void restore_left_aligned_voltage_outputs(hrtim_tu_number_t unit, hrtim_cnt_t modulation)
+    {
+        if (modulation != Lft_aligned) {
+            return;
+        }
+
+        tu_channel[unit]->switch_conv.set_H   = SET_PER;
+        tu_channel[unit]->switch_conv.reset_H = RST_CMP1;
+        tu_channel[unit]->switch_conv.set_L   = SET_CMP1;
+        tu_channel[unit]->switch_conv.reset_L = RST_PER;
+    }
 }
 
 void cut_pwm_apply(void)
@@ -111,66 +130,84 @@ void cut_pwm_apply(void)
     cut_pwm_initialized = true;
 
     if (cut_pwm_a1_enabled || cut_pwm_a2_enabled) {
-        spin.pwm.setModulation(PWMA, resolve_modulation(cut_pwm_a_modulation));
+        const auto modulation = resolve_modulation(cut_pwm_a_modulation);
+        spin.pwm.setModulation(PWMA, modulation);
         spin.pwm.setSwitchConvention(PWMA, PWMx1);
         spin.pwm.setMode(PWMA, VOLTAGE_MODE);
+        restore_left_aligned_voltage_outputs(PWMA, modulation);
         spin.pwm.setDeadTime(PWMA, cut_pwm_a_dead_rise_ns, cut_pwm_a_dead_fall_ns);
         spin.pwm.initUnit(PWMA);
+        cut_pwm_a_period = spin.pwm.getPeriod(PWMA);
         spin.pwm.setDeadTime(PWMA, cut_pwm_a_dead_rise_ns, cut_pwm_a_dead_fall_ns);
         spin.pwm.setDutyCycle(PWMA, cut_pwm_a_duty);
         spin.pwm.setPhaseShift(PWMA, cut_pwm_a_phase_deg);
     }
 
     if (cut_pwm_b1_enabled) {
-        spin.pwm.setModulation(PWMB, resolve_modulation(cut_pwm_b_modulation));
+        const auto modulation = resolve_modulation(cut_pwm_b_modulation);
+        spin.pwm.setModulation(PWMB, modulation);
         spin.pwm.setSwitchConvention(PWMB, PWMx1);
         spin.pwm.setMode(PWMB, VOLTAGE_MODE);
+        restore_left_aligned_voltage_outputs(PWMB, modulation);
         spin.pwm.setDeadTime(PWMB, cut_pwm_b_dead_rise_ns, cut_pwm_b_dead_fall_ns);
         spin.pwm.initUnit(PWMB);
+        cut_pwm_b_period = spin.pwm.getPeriod(PWMB);
         spin.pwm.setDeadTime(PWMB, cut_pwm_b_dead_rise_ns, cut_pwm_b_dead_fall_ns);
         spin.pwm.setDutyCycle(PWMB, cut_pwm_b_duty);
         spin.pwm.setPhaseShift(PWMB, cut_pwm_b_phase_deg);
     }
 
     if (cut_pwm_c1_enabled || cut_pwm_c2_enabled) {
-        spin.pwm.setModulation(PWMC, resolve_modulation(cut_pwm_c_modulation));
+        const auto modulation = resolve_modulation(cut_pwm_c_modulation);
+        spin.pwm.setModulation(PWMC, modulation);
         spin.pwm.setSwitchConvention(PWMC, PWMx1);
         spin.pwm.setMode(PWMC, VOLTAGE_MODE);
+        restore_left_aligned_voltage_outputs(PWMC, modulation);
         spin.pwm.setDeadTime(PWMC, cut_pwm_c_dead_rise_ns, cut_pwm_c_dead_fall_ns);
         spin.pwm.initUnit(PWMC);
+        cut_pwm_c_period = spin.pwm.getPeriod(PWMC);
         spin.pwm.setDeadTime(PWMC, cut_pwm_c_dead_rise_ns, cut_pwm_c_dead_fall_ns);
         spin.pwm.setDutyCycle(PWMC, cut_pwm_c_duty);
         spin.pwm.setPhaseShift(PWMC, cut_pwm_c_phase_deg);
     }
 
     if (cut_pwm_d1_enabled || cut_pwm_d2_enabled) {
-        spin.pwm.setModulation(PWMD, resolve_modulation(cut_pwm_d_modulation));
+        const auto modulation = resolve_modulation(cut_pwm_d_modulation);
+        spin.pwm.setModulation(PWMD, modulation);
         spin.pwm.setSwitchConvention(PWMD, PWMx1);
         spin.pwm.setMode(PWMD, VOLTAGE_MODE);
+        restore_left_aligned_voltage_outputs(PWMD, modulation);
         spin.pwm.setDeadTime(PWMD, cut_pwm_d_dead_rise_ns, cut_pwm_d_dead_fall_ns);
         spin.pwm.initUnit(PWMD);
+        cut_pwm_d_period = spin.pwm.getPeriod(PWMD);
         spin.pwm.setDeadTime(PWMD, cut_pwm_d_dead_rise_ns, cut_pwm_d_dead_fall_ns);
         spin.pwm.setDutyCycle(PWMD, cut_pwm_d_duty);
         spin.pwm.setPhaseShift(PWMD, cut_pwm_d_phase_deg);
     }
 
     if (cut_pwm_e1_enabled || cut_pwm_e2_enabled) {
-        spin.pwm.setModulation(PWME, resolve_modulation(cut_pwm_e_modulation));
+        const auto modulation = resolve_modulation(cut_pwm_e_modulation);
+        spin.pwm.setModulation(PWME, modulation);
         spin.pwm.setSwitchConvention(PWME, PWMx1);
         spin.pwm.setMode(PWME, VOLTAGE_MODE);
+        restore_left_aligned_voltage_outputs(PWME, modulation);
         spin.pwm.setDeadTime(PWME, cut_pwm_e_dead_rise_ns, cut_pwm_e_dead_fall_ns);
         spin.pwm.initUnit(PWME);
+        cut_pwm_e_period = spin.pwm.getPeriod(PWME);
         spin.pwm.setDeadTime(PWME, cut_pwm_e_dead_rise_ns, cut_pwm_e_dead_fall_ns);
         spin.pwm.setDutyCycle(PWME, cut_pwm_e_duty);
         spin.pwm.setPhaseShift(PWME, cut_pwm_e_phase_deg);
     }
 
     if (cut_pwm_f1_enabled || cut_pwm_f2_enabled) {
-        spin.pwm.setModulation(PWMF, resolve_modulation(cut_pwm_f_modulation));
+        const auto modulation = resolve_modulation(cut_pwm_f_modulation);
+        spin.pwm.setModulation(PWMF, modulation);
         spin.pwm.setSwitchConvention(PWMF, PWMx1);
         spin.pwm.setMode(PWMF, VOLTAGE_MODE);
+        restore_left_aligned_voltage_outputs(PWMF, modulation);
         spin.pwm.setDeadTime(PWMF, cut_pwm_f_dead_rise_ns, cut_pwm_f_dead_fall_ns);
         spin.pwm.initUnit(PWMF);
+        cut_pwm_f_period = spin.pwm.getPeriod(PWMF);
         spin.pwm.setDeadTime(PWMF, cut_pwm_f_dead_rise_ns, cut_pwm_f_dead_fall_ns);
         spin.pwm.setDutyCycle(PWMF, cut_pwm_f_duty);
         spin.pwm.setPhaseShift(PWMF, cut_pwm_f_phase_deg);
@@ -250,5 +287,6 @@ int main(void)
     setup_routine();
     return 0;
 }
+
 
 

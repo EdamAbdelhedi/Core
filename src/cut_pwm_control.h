@@ -15,6 +15,12 @@ extern uint8_t cut_pwm_e_modulation;
 extern uint8_t cut_pwm_f_modulation;
 extern bool cut_multi_enabled;
 extern uint8_t cut_multi_apply_status;
+extern uint16_t cut_pwm_a_period;
+extern uint16_t cut_pwm_b_period;
+extern uint16_t cut_pwm_c_period;
+extern uint16_t cut_pwm_d_period;
+extern uint16_t cut_pwm_e_period;
+extern uint16_t cut_pwm_f_period;
 
 extern bool cut_pwm_a1_enabled;
 extern bool cut_pwm_a2_enabled;
@@ -59,4 +65,5 @@ extern uint16_t cut_pwm_f_dead_fall_ns;
 void cut_pwm_apply(void);
 
 #endif /* CUT_PWM_CONTROL_H */
+
 
