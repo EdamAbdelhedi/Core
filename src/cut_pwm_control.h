@@ -7,6 +7,12 @@
 extern uint32_t cut_multi_freq_hz;
 extern uint32_t cut_multi_min_freq_hz;
 extern uint8_t cut_multi_modulation;
+extern uint8_t cut_pwm_a_modulation;
+extern uint8_t cut_pwm_b_modulation;
+extern uint8_t cut_pwm_c_modulation;
+extern uint8_t cut_pwm_d_modulation;
+extern uint8_t cut_pwm_e_modulation;
+extern uint8_t cut_pwm_f_modulation;
 extern bool cut_multi_enabled;
 extern uint8_t cut_multi_apply_status;
 
@@ -53,3 +59,4 @@ extern uint16_t cut_pwm_f_dead_fall_ns;
 void cut_pwm_apply(void);
 
 #endif /* CUT_PWM_CONTROL_H */
+
