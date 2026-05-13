@@ -37,6 +37,12 @@ uint8_t cut_pwm_c_modulation = 0;
 uint8_t cut_pwm_d_modulation = 0;
 uint8_t cut_pwm_e_modulation = 0;
 uint8_t cut_pwm_f_modulation = 0;
+uint8_t cut_pwm_a_switch_conv = 0;
+uint8_t cut_pwm_b_switch_conv = 0;
+uint8_t cut_pwm_c_switch_conv = 0;
+uint8_t cut_pwm_d_switch_conv = 0;
+uint8_t cut_pwm_e_switch_conv = 0;
+uint8_t cut_pwm_f_switch_conv = 0;
 bool cut_multi_enabled = false;
 uint8_t cut_multi_apply_status = 0;
 uint16_t cut_pwm_a_period = 0;
@@ -100,6 +106,18 @@ namespace
         return UpDwn;
     }
 
+    hrtim_switch_convention_t resolve_switch_convention(uint8_t requested)
+    {
+        if (requested == static_cast<uint8_t>(PWMx1)) {
+            return PWMx1;
+        }
+        if (requested == static_cast<uint8_t>(PWMx2)) {
+            return PWMx2;
+        }
+        cut_multi_apply_status = 1;
+        return PWMx1;
+    }
+
     void restore_left_aligned_voltage_outputs(hrtim_tu_number_t unit, hrtim_cnt_t modulation)
     {
         if (modulation != Lft_aligned) {
@@ -131,8 +149,9 @@ void cut_pwm_apply(void)
 
     if (cut_pwm_a1_enabled || cut_pwm_a2_enabled) {
         const auto modulation = resolve_modulation(cut_pwm_a_modulation);
+        const auto switch_convention = resolve_switch_convention(cut_pwm_a_switch_conv);
         spin.pwm.setModulation(PWMA, modulation);
-        spin.pwm.setSwitchConvention(PWMA, PWMx1);
+        spin.pwm.setSwitchConvention(PWMA, switch_convention);
         spin.pwm.setMode(PWMA, VOLTAGE_MODE);
         restore_left_aligned_voltage_outputs(PWMA, modulation);
         spin.pwm.setDeadTime(PWMA, cut_pwm_a_dead_rise_ns, cut_pwm_a_dead_fall_ns);
@@ -145,8 +164,9 @@ void cut_pwm_apply(void)
 
     if (cut_pwm_b1_enabled) {
         const auto modulation = resolve_modulation(cut_pwm_b_modulation);
+        const auto switch_convention = resolve_switch_convention(cut_pwm_b_switch_conv);
         spin.pwm.setModulation(PWMB, modulation);
-        spin.pwm.setSwitchConvention(PWMB, PWMx1);
+        spin.pwm.setSwitchConvention(PWMB, switch_convention);
         spin.pwm.setMode(PWMB, VOLTAGE_MODE);
         restore_left_aligned_voltage_outputs(PWMB, modulation);
         spin.pwm.setDeadTime(PWMB, cut_pwm_b_dead_rise_ns, cut_pwm_b_dead_fall_ns);
@@ -159,8 +179,9 @@ void cut_pwm_apply(void)
 
     if (cut_pwm_c1_enabled || cut_pwm_c2_enabled) {
         const auto modulation = resolve_modulation(cut_pwm_c_modulation);
+        const auto switch_convention = resolve_switch_convention(cut_pwm_c_switch_conv);
         spin.pwm.setModulation(PWMC, modulation);
-        spin.pwm.setSwitchConvention(PWMC, PWMx1);
+        spin.pwm.setSwitchConvention(PWMC, switch_convention);
         spin.pwm.setMode(PWMC, VOLTAGE_MODE);
         restore_left_aligned_voltage_outputs(PWMC, modulation);
         spin.pwm.setDeadTime(PWMC, cut_pwm_c_dead_rise_ns, cut_pwm_c_dead_fall_ns);
@@ -173,8 +194,9 @@ void cut_pwm_apply(void)
 
     if (cut_pwm_d1_enabled || cut_pwm_d2_enabled) {
         const auto modulation = resolve_modulation(cut_pwm_d_modulation);
+        const auto switch_convention = resolve_switch_convention(cut_pwm_d_switch_conv);
         spin.pwm.setModulation(PWMD, modulation);
-        spin.pwm.setSwitchConvention(PWMD, PWMx1);
+        spin.pwm.setSwitchConvention(PWMD, switch_convention);
         spin.pwm.setMode(PWMD, VOLTAGE_MODE);
         restore_left_aligned_voltage_outputs(PWMD, modulation);
         spin.pwm.setDeadTime(PWMD, cut_pwm_d_dead_rise_ns, cut_pwm_d_dead_fall_ns);
@@ -187,8 +209,9 @@ void cut_pwm_apply(void)
 
     if (cut_pwm_e1_enabled || cut_pwm_e2_enabled) {
         const auto modulation = resolve_modulation(cut_pwm_e_modulation);
+        const auto switch_convention = resolve_switch_convention(cut_pwm_e_switch_conv);
         spin.pwm.setModulation(PWME, modulation);
-        spin.pwm.setSwitchConvention(PWME, PWMx1);
+        spin.pwm.setSwitchConvention(PWME, switch_convention);
         spin.pwm.setMode(PWME, VOLTAGE_MODE);
         restore_left_aligned_voltage_outputs(PWME, modulation);
         spin.pwm.setDeadTime(PWME, cut_pwm_e_dead_rise_ns, cut_pwm_e_dead_fall_ns);
@@ -201,8 +224,9 @@ void cut_pwm_apply(void)
 
     if (cut_pwm_f1_enabled || cut_pwm_f2_enabled) {
         const auto modulation = resolve_modulation(cut_pwm_f_modulation);
+        const auto switch_convention = resolve_switch_convention(cut_pwm_f_switch_conv);
         spin.pwm.setModulation(PWMF, modulation);
-        spin.pwm.setSwitchConvention(PWMF, PWMx1);
+        spin.pwm.setSwitchConvention(PWMF, switch_convention);
         spin.pwm.setMode(PWMF, VOLTAGE_MODE);
         restore_left_aligned_voltage_outputs(PWMF, modulation);
         spin.pwm.setDeadTime(PWMF, cut_pwm_f_dead_rise_ns, cut_pwm_f_dead_fall_ns);
