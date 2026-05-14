@@ -1,61 +1,68 @@
-# OwnTech Power API
+# CUT Firmware Project
 
-This is the OwnTech Power API Core repository.
+This folder contains the `CUT` firmware project for the SPIN board under test.
 
-The Power API is designed to be used with VS Code and PlatformIO.
-[Installing VS Code with PlatformIO](https://platformio.org/install/ide?install=vscode).
+In the current setup, `CUT` is used to generate PWM signals that are later routed by the `MUX` board to the oscilloscope.
 
-For information about Power API, check out its [Documentation](https://docs.owntech.org/#/renders/API/home).
+## Main files
 
+- `src/main.cpp`: main firmware entry point
+- `src/spin_data_objects.h`: ThingSet objects exposed by the firmware
+- `src/cut_pwm_control.h`: helper used by the simplified CUT PWM selector
+- `platformio.ini`: build and upload configuration
 
-## Downloading OwnTech Power API Core
+## Current PWM control
 
-You fisrt need to download the Power API Core repository using the following command:
+`CUT` exposes the PWM interfaces used by the current hardware tests:
 
-`git clone https://github.com/owntech-foundation/Core.git owntech_power_api`
+- `Cut/PwmOut/wMux`
+- `Cut/PwmOut/wPin`
+- `Cut/PwmOut/wMux2`
+- `Cut/PwmOut/wPin2`
+- `Cut/PwmOut/wFreq_Hz`
+- `Cut/PwmOut/wDuty`
+- `Cut/PwmOut/wMod`
+- `Cut/PwmOut/wEnable`
+- `Cut/PwmOut/xApply`
 
-Then, open VS Code and, if not already done, install the PlatformIO plugin.
+Readbacks:
 
-Finally, open the newly cloned folder `owntech_power_api` using menu `File > Open Folder...`
+- `Cut/PwmOut/rMux`
+- `Cut/PwmOut/rPin`
+- `Cut/PwmOut/rMux2`
+- `Cut/PwmOut/rPin2`
+- `Cut/PwmOut/rOutput`
+- `Cut/PwmOut/rOutput2`
+- `Cut/PwmOut/rStatus`
 
+For burst-mode tests, `CUT` also keeps a reduced `Spin/Pwm` interface with only:
 
-## Working with OwnTech Power API
+- `Spin/Pwm/wTU`
+- `Spin/Pwm/wAction`
+- `Spin/Pwm/wBurstCmp`
+- `Spin/Pwm/wBurstPer`
+- `Spin/Pwm/xExec`
 
-While the project contains many folders and files, all your code goes to the `src` folder.
-In the this folder, the file `main.cpp` is the entry point of the application.
-Aditionally, some configuration can be done in the `platformio.ini` file.
+## Current synchronized mapping with MUX
 
-Other folders and files are used to configure the underlying Zephyr OS and PlatformIO, and are hidden by default.
+For the present hardware setup, the simple selector is aligned with the MUX channel numbering and now uses the pair `wMux + wPin`:
 
+- `wMux = 1`, `wPin = 8` -> `PA8` -> `PWM A main` -> `MUX1 channel 8`
+- `wMux = 1`, `wPin = 9` -> `PA9` -> `PWM A complementary` -> `MUX1 channel 9`
+- `wMux = 1`, `wPin = 10` -> `PA10` -> `PWM B main` -> `MUX1 channel 10`
+- `wMux = 2`, `wPin = 12` -> `PB12` -> `PWM C main` -> `MUX2 channel 12`
+- `wMux = 2`, `wPin = 13` -> `PB13` -> `PWM C complementary` -> `MUX2 channel 13`
+- `wMux = 2`, `wPin = 14` -> `PB14` -> `PWM D main` -> `MUX2 channel 14`
+- `wMux = 2`, `wPin = 15` -> `PB15` -> `PWM D complementary` -> `MUX2 channel 15`
+- `wMux = 3`, `wPin = 6` -> `PC6` -> `PWM F main` -> `MUX3 channel 6`
+- `wMux = 3`, `wPin = 7` -> `PC7` -> `PWM F complementary` -> `MUX3 channel 7`
+- `wMux = 3`, `wPin = 8` -> `PC8` -> `PWM E main` -> `MUX3 channel 8`
+- `wMux = 3`, `wPin = 9` -> `PC9` -> `PWM E complementary` -> `MUX3 channel 9`
 
-### Accessing OwnTech source code in VS Code (for advanced developers)
+## Development
 
-The full hierarchy of the project is as follows:
+Use VS Code with PlatformIO to build and upload this project.
 
-```
-owntech_power_api
-└─ owntech
-|  └─ boards
-|  └─ scripts
-|  └─>pio_extra.ini
-└─ src
-|  └─>main.cpp
-└─ zephyr
-|  └─ boards
-|  └─ dts
-|  └─ modules
-|  └─>CMakeLists.txt
-|  └─>prj.conf
-└─>LICENSE
-└─>platformio.ini
-└─>README.md
-```
+If you want to control `CUT` and `MUX` together from one PC-side command, use:
 
-The `owntech` folder contains scripts and board description for PlatformIO, while the `zephyr` folder contains board decription and OwnTech's Zephyr modules.
-By default, these folders (as well as VS Code and PlatformIO folders `.vscode` and `.pio`) are hidden when opening the project in VS Code.
-
-If you need to access these in VS Code, open the project using your file explorer, then in the `.vscode` folder, rename file `settings.json`, e.g. to `settings.json.old`.
-
-Advanced Zephyr configuration can be tweaked by editing `zephyr/prj.conf`.
-
-The OwnTech API source code is located in `zephyr/modules`. If you need to tailor it to your needs, please checkout the [Zephyr documentation](https://docs.zephyrproject.org/3.4.0/).
+- `tests/set_cut_mux_pwm.py`
