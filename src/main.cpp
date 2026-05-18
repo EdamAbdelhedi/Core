@@ -136,7 +136,8 @@ void cut_pwm_apply(void)
     cut_multi_apply_status = 0;
 
     if (cut_pwm_initialized) {
-        stop_all_pwm_outputs();
+        spin.pwm.deInit();
+        cut_pwm_initialized = false;
     }
 
     if (cut_multi_min_freq_hz == cut_multi_freq_hz) {
